@@ -1,22 +1,24 @@
 <template>
-  <canvas ref="canvas" width="100" height="300"></canvas>
+  <canvas ref="canvas" width="120" height="300"></canvas>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { inject, onMounted, ref } from "vue";
+import type { Ref } from "vue";
+import type { Game } from "@/logic/gameLoop";
 import { TETROMINOES } from "@/logic/tetromino";
 
-// 仮: 固定で5個分描画確認
-const queue = ["S", "L", "O", "Z", "I"];
-
+const game = inject<Ref<Game | null>>("game");
 const canvas = ref<HTMLCanvasElement | null>(null);
 
-onMounted(() => {
+function draw() {
   const ctx = canvas.value?.getContext("2d");
-  if (!ctx) return;
+  if (!ctx || !game?.value) return;
 
   const blockSize = 20;
+  const queue = game.value.queue.slice(0, 5);
 
+  ctx.clearRect(0, 0, canvas.value!.width, canvas.value!.height);
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.value!.width, canvas.value!.height);
 
@@ -45,5 +47,13 @@ onMounted(() => {
       });
     });
   });
+}
+
+onMounted(() => {
+  const loop = () => {
+    draw();
+    requestAnimationFrame(loop);
+  };
+  loop();
 });
 </script>

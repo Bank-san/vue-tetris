@@ -1,23 +1,27 @@
 <template>
-  <canvas ref="canvas" width="100" height="100"></canvas>
+  <canvas ref="canvas" width="120" height="120"></canvas>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { inject, onMounted, ref } from "vue";
+import type { Ref } from "vue";
+import type { Game } from "@/logic/gameLoop";
 import { TETROMINOES } from "@/logic/tetromino";
 
-// 仮: 固定表示で確認する
-const holdType = "T"; // ← ゲームロジックから受け取るように後で拡張
-
+const game = inject<Ref<Game | null>>("game");
 const canvas = ref<HTMLCanvasElement | null>(null);
 
-onMounted(() => {
+function draw() {
   const ctx = canvas.value?.getContext("2d");
-  if (!ctx || !holdType) return;
+  if (!ctx || !game?.value) return;
 
-  const shape = TETROMINOES[holdType];
+  const type = game.value.holdType;
+  if (!type) return;
+
+  const shape = TETROMINOES[type];
   const blockSize = 20;
 
+  ctx.clearRect(0, 0, canvas.value!.width, canvas.value!.height);
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.value!.width, canvas.value!.height);
 
@@ -31,5 +35,13 @@ onMounted(() => {
       }
     });
   });
+}
+
+onMounted(() => {
+  const loop = () => {
+    draw();
+    requestAnimationFrame(loop);
+  };
+  loop();
 });
 </script>
