@@ -16,6 +16,15 @@ export class Game {
   board: Matrix = Array.from({ length: 20 }, () => Array(10).fill(0));
   isGameOver = false;
 
+  getGhostPosition(): Position {
+    const ghost = { ...this.position };
+    while (!collide(this.board, this.piece, ghost)) {
+      ghost.y++;
+    }
+    ghost.y--;
+    return ghost;
+  }
+
   update(time: number) {
     if (this.isGameOver) {
       this.drawGameOver();
@@ -124,20 +133,28 @@ export class Game {
     this.ctx.fillRect(0, 0, 300, 600);
 
     this.drawMatrix(this.board, { x: 0, y: 0 });
+
+    const ghost = this.getGhostPosition();
+    this.drawMatrix(this.piece, ghost, true);
+
     this.drawMatrix(this.piece, this.position);
   }
 
-  drawMatrix(matrix: Matrix, pos: Position) {
+  drawMatrix(matrix: Matrix, pos: Position, isGhost = false) {
     matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
-          this.ctx.fillStyle = `hsl(${value * 50}, 70%, 60%)`;
+          this.ctx.fillStyle = isGhost
+            ? "rgba(255, 255, 255, 0.2)" // ゴースト：薄い白
+            : `hsl(${value * 50}, 70%, 60%)`; // 通常：カラフル
+
           this.ctx.fillRect(
             (x + pos.x) * this.blockSize,
             (y + pos.y) * this.blockSize,
             this.blockSize,
             this.blockSize
           );
+
           this.ctx.strokeStyle = "#111";
           this.ctx.strokeRect(
             (x + pos.x) * this.blockSize,
@@ -149,6 +166,7 @@ export class Game {
       });
     });
   }
+
   score = 0;
 
   merge() {
