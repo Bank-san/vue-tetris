@@ -3,18 +3,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { Game } from "@/logic/gameLoop";
+import { inject, onMounted, ref } from "vue";
+import type { Ref } from "vue";
+import type { Game } from "@/logic/gameLoop";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
+const game = inject<Ref<Game | null>>("game");
 
 onMounted(() => {
-  const ctx = canvas.value?.getContext("2d");
-  if (!ctx) return;
-
-  const game = new Game(ctx);
-  requestAnimationFrame(game.update.bind(game));
-
-  // gameをPiniaやprovide/injectで共有したければここで管理可能
+  if (!canvas.value || !game?.value) return;
+  game.value.ctx = canvas.value.getContext("2d")!;
 });
 </script>

@@ -10,6 +10,7 @@ const DROP_INTERVAL = 1000;
 
 export class Game {
   ctx: CanvasRenderingContext2D;
+  stats: { score: number; lines: number; isGameOver: boolean };
   blockSize = 30;
   position: Position = { x: 3, y: 0 };
   piece: Matrix = randomTetromino();
@@ -80,11 +81,16 @@ export class Game {
 
     if (collide(this.board, this.piece, this.position)) {
       this.isGameOver = true;
+      this.stats.isGameOver = true;
     }
   }
 
-  constructor(ctx: CanvasRenderingContext2D) {
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    stats: { score: number; lines: number; isGameOver: boolean }
+  ) {
     this.ctx = ctx;
+    this.stats = stats;
     this.registerEvents();
   }
 
@@ -242,7 +248,6 @@ export class Game {
   score = 0;
 
   merge() {
-    // マージ処理
     this.piece.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
@@ -254,40 +259,32 @@ export class Game {
     });
 
     const lines = clearLines(this.board);
+    const isTSpin = this.isTSpin();
 
     if (lines > 0) {
-      const isTSpin = this.isTSpin();
       if (isTSpin) {
         console.log(`T-SPIN! lines: ${lines}`);
       }
 
-      this.score += this.calculateScore(lines, isTSpin);
+      const gained = this.calculateScore(lines, isTSpin);
+      this.stats.score += gained;
+      this.stats.lines += lines;
+      console.log(`Score: ${this.stats.score} (+${gained})`);
     }
   }
 
   calculateScore(lines: number, tSpin = false): number {
     if (tSpin) {
-      switch (lines) {
-        case 1:
-          return 800;
-        case 2:
-          return 1200;
-        case 3:
-          return 1600;
-      }
+      if (lines === 1) return 800;
+      if (lines === 2) return 1200;
+      if (lines === 3) return 1600;
     }
 
-    switch (lines) {
-      case 1:
-        return 100;
-      case 2:
-        return 300;
-      case 3:
-        return 500;
-      case 4:
-        return 800;
-      default:
-        return 0;
-    }
+    if (lines === 1) return 100;
+    if (lines === 2) return 300;
+    if (lines === 3) return 500;
+    if (lines === 4) return 800;
+
+    return 0; // ← これだけが本当の fallback
   }
 }
