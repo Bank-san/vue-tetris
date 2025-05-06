@@ -14,8 +14,14 @@ export class Game {
   lastTime = 0;
   dropCounter = 0;
   board: Matrix = Array.from({ length: 20 }, () => Array(10).fill(0));
+  isGameOver = false;
 
   update(time: number) {
+    if (this.isGameOver) {
+      this.drawGameOver();
+      return;
+    }
+
     const deltaTime = time - this.lastTime;
     this.lastTime = time;
     this.dropCounter += deltaTime;
@@ -27,6 +33,16 @@ export class Game {
 
     this.draw();
     requestAnimationFrame(this.update.bind(this));
+  }
+
+  drawGameOver() {
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+    this.ctx.fillRect(0, 0, 300, 600);
+
+    this.ctx.fillStyle = "white";
+    this.ctx.font = "24px sans-serif";
+    this.ctx.textAlign = "center";
+    this.ctx.fillText("GAME OVER", 150, 300);
   }
 
   drop() {
@@ -41,6 +57,11 @@ export class Game {
   reset() {
     this.piece = randomTetromino();
     this.position = { x: 3, y: 0 };
+
+    if (collide(this.board, this.piece, this.position)) {
+      this.isGameOver = true;
+      console.log("Game Over");
+    }
   }
 
   constructor(ctx: CanvasRenderingContext2D) {
