@@ -2,6 +2,7 @@ import type { Matrix, Position } from "@/types/types";
 import { TETROMINOES, randomTetromino } from "./tetromino";
 import { collide } from "./collision";
 import { rotate } from "./rotation";
+import { clearLines } from "./clearLines";
 
 const DROP_INTERVAL = 1000;
 
@@ -35,18 +36,6 @@ export class Game {
       this.merge();
       this.reset();
     }
-  }
-
-  merge() {
-    this.piece.forEach((row, y) => {
-      row.forEach((value, x) => {
-        if (value !== 0) {
-          const boardY = y + this.position.y;
-          const boardX = x + this.position.x;
-          this.board[boardY][boardX] = value;
-        }
-      });
-    });
   }
 
   reset() {
@@ -138,5 +127,39 @@ export class Game {
         }
       });
     });
+  }
+  score = 0;
+
+  merge() {
+    this.piece.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          const boardY = y + this.position.y;
+          const boardX = x + this.position.x;
+          this.board[boardY][boardX] = value;
+        }
+      });
+    });
+
+    const lines = clearLines(this.board);
+    if (lines > 0) {
+      this.score += this.calculateScore(lines);
+      console.log(`Score: ${this.score}`);
+    }
+  }
+
+  calculateScore(lines: number): number {
+    switch (lines) {
+      case 1:
+        return 100;
+      case 2:
+        return 300;
+      case 3:
+        return 500;
+      case 4:
+        return 800;
+      default:
+        return 0;
+    }
   }
 }
