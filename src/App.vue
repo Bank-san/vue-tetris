@@ -1,7 +1,7 @@
 <template>
-  <TetrisCanvas />
+  <TetrisGame />
 </template>
 
 <script setup lang="ts">
-import TetrisCanvas from "./components/TetrisCanvas.vue";
+import TetrisGame from "./components/TetrisGame.vue";
 </script>

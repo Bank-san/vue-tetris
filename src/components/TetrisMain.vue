@@ -1,6 +1,5 @@
 <template>
-  <canvas ref="canvas" width="500" height="600"></canvas>
-  <!-- ← 300→500 -->
+  <canvas ref="canvas" width="300" height="600"></canvas>
 </template>
 
 <script setup lang="ts">
@@ -15,5 +14,7 @@ onMounted(() => {
 
   const game = new Game(ctx);
   requestAnimationFrame(game.update.bind(game));
+
+  // gameをPiniaやprovide/injectで共有したければここで管理可能
 });
 </script>

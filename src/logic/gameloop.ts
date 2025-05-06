@@ -3,6 +3,7 @@ import { TETROMINOES, randomTetromino } from "./tetromino";
 import { collide } from "./collision";
 import { rotate } from "./rotation";
 import { clearLines } from "./clearLines";
+import { generateQueue } from "./tetromino";
 
 const DROP_INTERVAL = 1000;
 
@@ -15,6 +16,10 @@ export class Game {
   dropCounter = 0;
   board: Matrix = Array.from({ length: 20 }, () => Array(10).fill(0));
   isGameOver = false;
+  pieceType: string = "";
+  queue: string[] = [...generateQueue(), ...generateQueue()];
+  holdType: string | null = null;
+  canHold: boolean = true;
 
   getGhostPosition(): Position {
     const ghost = { ...this.position };
@@ -64,12 +69,16 @@ export class Game {
   }
 
   reset() {
-    this.piece = randomTetromino();
+    this.canHold = true;
+    this.pieceType = this.queue.shift()!;
+    if (this.queue.length < 7) {
+      this.queue.push(...generateQueue());
+    }
+    this.piece = TETROMINOES[this.pieceType];
     this.position = { x: 3, y: 0 };
 
     if (collide(this.board, this.piece, this.position)) {
       this.isGameOver = true;
-      console.log("Game Over");
     }
   }
 
@@ -99,8 +108,32 @@ export class Game {
         case "KeyX":
           this.rotatePiece(1);
           break;
+        case "KeyC":
+          this.hold();
+          break;
       }
     });
+  }
+
+  hold() {
+    if (!this.canHold) return;
+
+    const temp = this.holdType;
+    this.holdType = this.pieceType;
+
+    if (temp) {
+      this.pieceType = temp;
+      this.piece = TETROMINOES[this.pieceType];
+    } else {
+      this.pieceType = this.queue.shift()!;
+      if (this.queue.length < 7) {
+        this.queue.push(...generateQueue());
+      }
+      this.piece = TETROMINOES[this.pieceType];
+    }
+
+    this.position = { x: 3, y: 0 };
+    this.canHold = false;
   }
 
   move(dir: -1 | 1) {
@@ -130,7 +163,7 @@ export class Game {
 
   draw() {
     this.ctx.fillStyle = "#000";
-    this.ctx.fillRect(0, 0, 300, 600);
+    this.ctx.fillRect(0, 0, 500, 600); // ← widthを500に
 
     this.drawMatrix(this.board, { x: 0, y: 0 });
 
@@ -138,23 +171,33 @@ export class Game {
     this.drawMatrix(this.piece, ghost, true);
 
     this.drawMatrix(this.piece, this.position);
+
+    for (let i = 0; i < 5; i++) {
+      const type = this.queue[i];
+      const shape = TETROMINOES[type];
+      this.drawMatrix(shape, { x: 11, y: 1 + i * 3 }, false, 0.5);
+    }
+
+    if (this.holdType) {
+      const shape = TETROMINOES[this.holdType];
+      this.drawMatrix(shape, { x: -4, y: 2 }, false, 0.5);
+    }
   }
 
-  drawMatrix(matrix: Matrix, pos: Position, isGhost = false) {
+  drawMatrix(matrix: Matrix, pos: Position, isGhost = false, alpha = 1) {
     matrix.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
+          this.ctx.globalAlpha = alpha;
           this.ctx.fillStyle = isGhost
-            ? "rgba(255, 255, 255, 0.2)" // ゴースト：薄い白
-            : `hsl(${value * 50}, 70%, 60%)`; // 通常：カラフル
-
+            ? "rgba(255, 255, 255, 0.2)"
+            : `hsl(${value * 50}, 70%, 60%)`;
           this.ctx.fillRect(
             (x + pos.x) * this.blockSize,
             (y + pos.y) * this.blockSize,
             this.blockSize,
             this.blockSize
           );
-
           this.ctx.strokeStyle = "#111";
           this.ctx.strokeRect(
             (x + pos.x) * this.blockSize,
@@ -162,6 +205,7 @@ export class Game {
             this.blockSize,
             this.blockSize
           );
+          this.ctx.globalAlpha = 1;
         }
       });
     });

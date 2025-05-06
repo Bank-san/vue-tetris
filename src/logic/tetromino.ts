@@ -43,3 +43,12 @@ export const randomTetromino = () => {
   const key = keys[Math.floor(Math.random() * keys.length)];
   return TETROMINOES[key];
 };
+
+export function generateQueue(): string[] {
+  const pieces = Object.keys(TETROMINOES);
+  for (let i = pieces.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+  }
+  return pieces;
+}
