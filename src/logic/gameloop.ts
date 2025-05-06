@@ -4,6 +4,7 @@ import { collide } from "./collision";
 import { rotate } from "./rotation";
 import { clearLines } from "./clearLines";
 import { generateQueue } from "./tetromino";
+import { wallKickOffsets } from "./wallKickOffsets";
 
 const DROP_INTERVAL = 1000;
 
@@ -146,10 +147,37 @@ export class Game {
   rotatePiece(dir: 1 | -1) {
     const original = this.piece;
     const rotated = rotate(this.piece, dir);
-    this.piece = rotated;
-    if (collide(this.board, this.piece, this.position)) {
-      this.piece = original;
+
+    for (const offset of wallKickOffsets) {
+      const newPos = {
+        x: this.position.x + offset.x,
+        y: this.position.y + offset.y,
+      };
+
+      if (!collide(this.board, rotated, newPos)) {
+        this.piece = rotated;
+        this.position = newPos;
+        return;
+      }
     }
+
+    // 回転できない場合は元に戻す
+    this.piece = original;
+  }
+
+  isTSpin(): boolean {
+    if (this.pieceType !== "T") return false;
+
+    const { x, y } = this.position;
+    const corners = [
+      this.board[y - 1]?.[x - 1],
+      this.board[y - 1]?.[x + 1],
+      this.board[y + 1]?.[x - 1],
+      this.board[y + 1]?.[x + 1],
+    ];
+
+    const filled = corners.filter((v) => v !== 0 && v !== undefined).length;
+    return filled >= 3;
   }
 
   hardDrop() {
@@ -214,6 +242,7 @@ export class Game {
   score = 0;
 
   merge() {
+    // マージ処理
     this.piece.forEach((row, y) => {
       row.forEach((value, x) => {
         if (value !== 0) {
@@ -225,13 +254,29 @@ export class Game {
     });
 
     const lines = clearLines(this.board);
+
     if (lines > 0) {
-      this.score += this.calculateScore(lines);
-      console.log(`Score: ${this.score}`);
+      const isTSpin = this.isTSpin();
+      if (isTSpin) {
+        console.log(`T-SPIN! lines: ${lines}`);
+      }
+
+      this.score += this.calculateScore(lines, isTSpin);
     }
   }
 
-  calculateScore(lines: number): number {
+  calculateScore(lines: number, tSpin = false): number {
+    if (tSpin) {
+      switch (lines) {
+        case 1:
+          return 800;
+        case 2:
+          return 1200;
+        case 3:
+          return 1600;
+      }
+    }
+
     switch (lines) {
       case 1:
         return 100;
