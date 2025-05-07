@@ -54,11 +54,6 @@ export class Game {
   drawGameOver() {
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
     this.ctx.fillRect(0, 0, 300, 600);
-
-    this.ctx.fillStyle = "white";
-    this.ctx.font = "24px sans-serif";
-    this.ctx.textAlign = "center";
-    this.ctx.fillText("GAME OVER", 150, 300);
   }
 
   drop() {

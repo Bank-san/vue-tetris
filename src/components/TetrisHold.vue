@@ -16,14 +16,14 @@ function draw() {
   if (!ctx || !game?.value) return;
 
   const type = game.value.holdType;
-  if (!type) return;
+  if (!type) return; // holdされてなければ描画しない
 
   const shape = TETROMINOES[type];
   const blockSize = 20;
 
-  ctx.clearRect(0, 0, canvas.value!.width, canvas.value!.height);
+  ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
   ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.value!.width, canvas.value!.height);
+  ctx.fillRect(0, 0, canvas.value.width, canvas.value.height);
 
   shape.forEach((row, y) => {
     row.forEach((value, x) => {
