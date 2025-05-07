@@ -1,19 +1,17 @@
+// gameLoop.ts
 import type { Matrix, Position } from "@/types/types";
-import { TETROMINOES, randomTetromino } from "./tetromino";
+import { TETROMINOES, randomTetromino, generateQueue } from "./tetromino";
 import { collide } from "./collision";
 import { rotate } from "./rotation";
 import { clearLines } from "./clearLines";
-import { generateQueue } from "./tetromino";
 import { wallKickOffsets } from "./wallKickOffsets";
-
-const DROP_INTERVAL = 1000;
 
 export class Game {
   ctx: CanvasRenderingContext2D;
   stats: { score: number; lines: number; isGameOver: boolean };
   blockSize = 30;
   position: Position = { x: 3, y: 0 };
-  piece: Matrix = randomTetromino();
+  piece: Matrix;
   lastTime = 0;
   dropCounter = 0;
   board: Matrix = Array.from({ length: 20 }, () => Array(10).fill(0));
@@ -24,6 +22,20 @@ export class Game {
   canHold: boolean = true;
   level = 1;
 
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    stats: { score: number; lines: number; isGameOver: boolean }
+  ) {
+    this.ctx = ctx;
+    this.stats = stats;
+    this.registerEvents();
+    this.reset();
+  }
+
+  get dropInterval(): number {
+    return Math.max(100, 1000 - (this.level - 1) * 100);
+  }
+
   getGhostPosition(): Position {
     const ghost = { ...this.position };
     while (!collide(this.board, this.piece, ghost)) {
@@ -31,10 +43,6 @@ export class Game {
     }
     ghost.y--;
     return ghost;
-  }
-
-  get dropInterval(): number {
-    return Math.max(100, 1000 - (this.level - 1) * 100);
   }
 
   update(time: number) {
@@ -66,6 +74,26 @@ export class Game {
     if (collide(this.board, this.piece, this.position)) {
       this.position.y--;
       this.merge();
+
+      const isTSpin = this.isTSpin();
+      const lines = clearLines(this.board);
+
+      if (lines > 0) {
+        const gained = this.calculateScore(lines, isTSpin);
+        this.stats.score += gained;
+        this.stats.lines += lines;
+
+        if (isTSpin) {
+          console.log(`🔥 T-SPIN! lines: ${lines} (+${gained})`);
+        }
+
+        const newLevel = Math.floor(this.stats.lines / 10) + 1;
+        if (newLevel > this.level) {
+          this.level = newLevel;
+          console.log(`🎉 LEVEL UP! Now Level ${this.level}`);
+        }
+      }
+
       this.reset();
     }
   }
@@ -83,16 +111,6 @@ export class Game {
       this.isGameOver = true;
       this.stats.isGameOver = true;
     }
-  }
-
-  constructor(
-    ctx: CanvasRenderingContext2D,
-    stats: { score: number; lines: number; isGameOver: boolean }
-  ) {
-    this.ctx = ctx;
-    this.stats = stats;
-    this.registerEvents();
-    this.reset();
   }
 
   registerEvents() {
@@ -168,7 +186,6 @@ export class Game {
       }
     }
 
-    // 回転できない場合は元に戻す
     this.piece = original;
   }
 
@@ -193,18 +210,35 @@ export class Game {
     }
     this.position.y--;
     this.merge();
+
+    const isTSpin = this.isTSpin();
+    const lines = clearLines(this.board);
+
+    if (lines > 0) {
+      const gained = this.calculateScore(lines, isTSpin);
+      this.stats.score += gained;
+      this.stats.lines += lines;
+
+      if (isTSpin) {
+        console.log(`🔥 T-SPIN! lines: ${lines} (+${gained})`);
+      }
+
+      const newLevel = Math.floor(this.stats.lines / 10) + 1;
+      if (newLevel > this.level) {
+        this.level = newLevel;
+        console.log(`🎉 LEVEL UP! Now Level ${this.level}`);
+      }
+    }
+
     this.reset();
   }
 
   draw() {
     this.ctx.fillStyle = "#000";
-    this.ctx.fillRect(0, 0, 500, 600); // ← widthを500に
-
+    this.ctx.fillRect(0, 0, 500, 600);
     this.drawMatrix(this.board, { x: 0, y: 0 });
-
     const ghost = this.getGhostPosition();
     this.drawMatrix(this.piece, ghost, true);
-
     this.drawMatrix(this.piece, this.position);
 
     for (let i = 0; i < 5; i++) {
@@ -246,8 +280,6 @@ export class Game {
     });
   }
 
-  score = 0;
-
   merge() {
     this.piece.forEach((row, y) => {
       row.forEach((value, x) => {
@@ -258,26 +290,6 @@ export class Game {
         }
       });
     });
-
-    const lines = clearLines(this.board);
-    const isTSpin = this.isTSpin();
-
-    if (lines > 0) {
-      if (isTSpin) {
-        console.log(`T-SPIN! lines: ${lines}`);
-      }
-
-      const gained = this.calculateScore(lines, isTSpin);
-      this.stats.score += gained;
-      this.stats.lines += lines;
-      console.log(`Score: ${this.stats.score} (+${gained})`);
-      // レベルアップ（10ラインごと）
-      const newLevel = Math.floor(this.stats.lines / 10) + 1;
-      if (newLevel > this.level) {
-        this.level = newLevel;
-        console.log(`🎉 LEVEL UP! Now Level ${this.level}`);
-      }
-    }
   }
 
   calculateScore(lines: number, tSpin = false): number {
@@ -292,6 +304,6 @@ export class Game {
     if (lines === 3) return 500;
     if (lines === 4) return 800;
 
-    return 0; // ← これだけが本当の fallback
+    return 0;
   }
 }
