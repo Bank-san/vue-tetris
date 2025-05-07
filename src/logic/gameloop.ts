@@ -21,6 +21,8 @@ export class Game {
   holdType: string | null = null;
   canHold: boolean = true;
   level = 1;
+  messageTimer = 0;
+  messageText = "";
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -60,8 +62,28 @@ export class Game {
       this.dropCounter = 0;
     }
 
+    if (this.messageTimer > 0) {
+      this.messageTimer -= deltaTime;
+    }
+
     this.draw();
     requestAnimationFrame(this.update.bind(this));
+  }
+
+  showMessage(text: string) {
+    this.messageText = text;
+    this.messageTimer = 1500; // milliseconds
+  }
+
+  drawMessage() {
+    if (this.messageTimer > 0) {
+      this.ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      this.ctx.fillRect(0, 250, 300, 100);
+      this.ctx.fillStyle = "white";
+      this.ctx.font = "24px sans-serif";
+      this.ctx.textAlign = "center";
+      this.ctx.fillText(this.messageText, 150, 300);
+    }
   }
 
   drawGameOver() {
@@ -84,7 +106,11 @@ export class Game {
         this.stats.lines += lines;
 
         if (isTSpin) {
-          console.log(`🔥 T-SPIN! lines: ${lines} (+${gained})`);
+          this.showMessage(
+            `T-SPIN ${["", "SINGLE", "DOUBLE", "TRIPLE"][lines]}`
+          );
+        } else if (lines === 4) {
+          this.showMessage("TETRIS!");
         }
 
         const newLevel = Math.floor(this.stats.lines / 10) + 1;
@@ -220,7 +246,9 @@ export class Game {
       this.stats.lines += lines;
 
       if (isTSpin) {
-        console.log(`🔥 T-SPIN! lines: ${lines} (+${gained})`);
+        this.showMessage(`T-SPIN ${["", "SINGLE", "DOUBLE", "TRIPLE"][lines]}`);
+      } else if (lines === 4) {
+        this.showMessage("TETRIS!");
       }
 
       const newLevel = Math.floor(this.stats.lines / 10) + 1;
@@ -251,6 +279,8 @@ export class Game {
       const shape = TETROMINOES[this.holdType];
       this.drawMatrix(shape, { x: -4, y: 2 }, false, 0.5);
     }
+
+    this.drawMessage();
   }
 
   drawMatrix(matrix: Matrix, pos: Position, isGhost = false, alpha = 1) {
