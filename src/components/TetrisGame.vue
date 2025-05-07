@@ -30,7 +30,12 @@
       </v-col>
 
       <v-col cols="2">
-        <TetrisNext />
+        <v-card class="pa-2" elevation="2" color="#1e1e1e">
+          <v-card-title class="text-white">NEXT</v-card-title>
+          <v-card-text>
+            <TetrisNext />
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>

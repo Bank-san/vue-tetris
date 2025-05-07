@@ -1,5 +1,15 @@
 <template>
-  <canvas ref="canvas" width="120" height="120"></canvas>
+  <v-card class="pa-2" elevation="2" color="#1e1e1e">
+    <v-card-title class="text-white">HOLD</v-card-title>
+    <v-card-text>
+      <canvas
+        ref="canvas"
+        width="100"
+        height="100"
+        style="background-color: black"
+      />
+    </v-card-text>
+  </v-card>
 </template>
 
 <script setup lang="ts">
