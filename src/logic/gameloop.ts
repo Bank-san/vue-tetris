@@ -23,6 +23,8 @@ export class Game {
   level = 1;
   messageTimer = 0;
   messageText = "";
+  didRotate = false;
+  lastMoveWasRotate = false;
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -72,7 +74,7 @@ export class Game {
 
   showMessage(text: string) {
     this.messageText = text;
-    this.messageTimer = 1500; // milliseconds
+    this.messageTimer = 1500;
   }
 
   drawMessage() {
@@ -91,13 +93,29 @@ export class Game {
     this.ctx.fillRect(0, 0, 300, 600);
   }
 
+  isTSpin(): boolean {
+    if (this.pieceType !== "T" || !this.lastMoveWasRotate) return false;
+
+    const centerX = this.position.x + 1;
+    const centerY = this.position.y + 1;
+
+    const corners = [
+      this.board[centerY - 1]?.[centerX - 1],
+      this.board[centerY - 1]?.[centerX + 1],
+      this.board[centerY + 1]?.[centerX - 1],
+      this.board[centerY + 1]?.[centerX + 1],
+    ];
+
+    const filled = corners.filter((v) => v !== 0 && v !== undefined).length;
+    return filled >= 3;
+  }
+
   drop() {
     this.position.y++;
     if (collide(this.board, this.piece, this.position)) {
       this.position.y--;
-      this.merge();
-
       const isTSpin = this.isTSpin();
+      this.merge();
       const lines = clearLines(this.board);
 
       if (lines > 0) {
@@ -116,16 +134,19 @@ export class Game {
         const newLevel = Math.floor(this.stats.lines / 10) + 1;
         if (newLevel > this.level) {
           this.level = newLevel;
-          console.log(`🎉 LEVEL UP! Now Level ${this.level}`);
         }
       }
 
-      this.reset();
+      this.didRotate = false;
+      this.lastMoveWasRotate = false;
+      requestAnimationFrame(() => this.reset());
     }
   }
 
   reset() {
     this.canHold = true;
+    this.didRotate = false;
+    this.lastMoveWasRotate = false;
     this.pieceType = this.queue.shift()!;
     if (this.queue.length < 7) {
       this.queue.push(...generateQueue());
@@ -193,6 +214,7 @@ export class Game {
     if (collide(this.board, this.piece, this.position)) {
       this.position.x -= dir;
     }
+    this.lastMoveWasRotate = false;
   }
 
   rotatePiece(dir: 1 | -1) {
@@ -208,6 +230,8 @@ export class Game {
       if (!collide(this.board, rotated, newPos)) {
         this.piece = rotated;
         this.position = newPos;
+        this.didRotate = true;
+        this.lastMoveWasRotate = true;
         return;
       }
     }
@@ -215,29 +239,13 @@ export class Game {
     this.piece = original;
   }
 
-  isTSpin(): boolean {
-    if (this.pieceType !== "T") return false;
-
-    const { x, y } = this.position;
-    const corners = [
-      this.board[y - 1]?.[x - 1],
-      this.board[y - 1]?.[x + 1],
-      this.board[y + 1]?.[x - 1],
-      this.board[y + 1]?.[x + 1],
-    ];
-
-    const filled = corners.filter((v) => v !== 0 && v !== undefined).length;
-    return filled >= 3;
-  }
-
   hardDrop() {
     while (!collide(this.board, this.piece, this.position)) {
       this.position.y++;
     }
     this.position.y--;
-    this.merge();
-
     const isTSpin = this.isTSpin();
+    this.merge();
     const lines = clearLines(this.board);
 
     if (lines > 0) {
@@ -254,11 +262,12 @@ export class Game {
       const newLevel = Math.floor(this.stats.lines / 10) + 1;
       if (newLevel > this.level) {
         this.level = newLevel;
-        console.log(`🎉 LEVEL UP! Now Level ${this.level}`);
       }
     }
 
-    this.reset();
+    this.didRotate = false;
+    this.lastMoveWasRotate = false;
+    requestAnimationFrame(() => this.reset());
   }
 
   draw() {
