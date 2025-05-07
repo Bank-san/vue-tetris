@@ -1,52 +1,56 @@
 <template>
-  <div class="tetris-layout">
-    <div class="side-panel">
-      <TetrisHold />
-    </div>
+  <v-container class="pa-4">
+    <v-row>
+      <v-col cols="2">
+        <TetrisHold />
+      </v-col>
 
-    <div class="main-panel">
-      <div class="canvas-wrapper">
-        <canvas ref="canvasRef" width="300" height="600"></canvas>
+      <v-col cols="8">
+        <v-card elevation="4" class="pa-2">
+          <canvas ref="canvasRef" width="300" height="600"></canvas>
+          <v-card-text>
+            <v-row justify="center" align="center" class="mt-2">
+              <v-col cols="auto">
+                <v-chip color="primary" class="ma-1"
+                  >Score: {{ stats.score }}</v-chip
+                >
+                <v-chip color="success" class="ma-1"
+                  >Lines: {{ stats.lines }}</v-chip
+                >
+                <v-chip color="deep-purple" class="ma-1"
+                  >Level: {{ level }}</v-chip
+                >
+                <v-chip v-if="stats.isGameOver" color="error" class="ma-1"
+                  >GAME OVER</v-chip
+                >
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
 
-        <!-- Game Over Overlay -->
-        <div class="game-over-overlay" v-if="stats.isGameOver">
-          <p>🎮 GAME OVER 🎮</p>
-          <button @click="retry">🔁 Retry</button>
-        </div>
-      </div>
-
-      <!-- Score Info -->
-      <div class="info-panel">
-        <p>Score: {{ stats.score }}</p>
-        <p>Lines: {{ stats.lines }}</p>
-        <p>Level: {{ game?.level ?? 1 }}</p>
-      </div>
-    </div>
-
-    <div class="side-panel">
-      <TetrisNext />
-    </div>
-  </div>
+      <v-col cols="2">
+        <TetrisNext />
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script setup lang="ts">
-import { provide, ref, onMounted, reactive } from "vue";
+import { ref, onMounted, provide, reactive, computed } from "vue";
+import { Game } from "@/logic/gameLoop";
 import TetrisHold from "./TetrisHold.vue";
 import TetrisNext from "./TetrisNext.vue";
-import { Game } from "@/logic/gameLoop";
-
-// リアクティブなステータス情報
-const stats = reactive({
-  score: 0,
-  lines: 0,
-  isGameOver: false,
-});
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const game = ref<Game | null>(null);
-provide("game", game);
+const stats = reactive({ score: 0, lines: 0, isGameOver: false });
 
-// ゲームの初期化とスタート
+provide("game", game);
+provide("gameStats", stats);
+
+const level = computed(() => Math.floor(stats.lines / 10) + 1);
+
 onMounted(() => {
   if (!canvasRef.value) return;
   const ctx = canvasRef.value.getContext("2d");
@@ -55,84 +59,12 @@ onMounted(() => {
   game.value = new Game(ctx, stats);
   requestAnimationFrame(game.value.update.bind(game.value));
 });
-
-// リトライ処理
-function retry() {
-  if (!canvasRef.value) return;
-  const ctx = canvasRef.value.getContext("2d");
-  if (!ctx) return;
-
-  stats.score = 0;
-  stats.lines = 0;
-  stats.isGameOver = false;
-
-  game.value = new Game(ctx, stats);
-  requestAnimationFrame(game.value.update.bind(game.value));
-}
 </script>
 
 <style scoped>
-.tetris-layout {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 20px;
-  color: white;
-  font-family: sans-serif;
-}
-
-.side-panel,
-.main-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.canvas-wrapper {
-  position: relative;
-}
-
 canvas {
+  background: black;
   display: block;
-  border: 2px solid #333;
-}
-
-.game-over-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 300px;
-  height: 600px;
-  background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-size: 1.5rem;
-  gap: 10px;
-}
-
-.game-over-overlay button {
-  padding: 8px 16px;
-  background-color: #444;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.game-over-overlay button:hover {
-  background-color: #666;
-}
-
-.info-panel {
-  margin-top: 10px;
-  text-align: center;
-  background: #111;
-  padding: 10px;
-  border-radius: 8px;
-  width: 300px;
+  margin: 0 auto;
 }
 </style>
