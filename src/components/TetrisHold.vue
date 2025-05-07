@@ -16,7 +16,7 @@ function draw() {
   if (!ctx || !game?.value) return;
 
   const type = game.value.holdType;
-  if (!type) return; // holdされてなければ描画しない
+  if (!type) return;
 
   const shape = TETROMINOES[type];
   const blockSize = 20;

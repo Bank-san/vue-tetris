@@ -19,6 +19,7 @@
       <div class="info-panel">
         <p>Score: {{ stats.score }}</p>
         <p>Lines: {{ stats.lines }}</p>
+        <p>Level: {{ game?.level ?? 1 }}</p>
       </div>
     </div>
 

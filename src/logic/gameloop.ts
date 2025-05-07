@@ -22,6 +22,7 @@ export class Game {
   queue: string[] = [...generateQueue(), ...generateQueue()];
   holdType: string | null = null;
   canHold: boolean = true;
+  level = 1;
 
   getGhostPosition(): Position {
     const ghost = { ...this.position };
@@ -30,6 +31,10 @@ export class Game {
     }
     ghost.y--;
     return ghost;
+  }
+
+  get dropInterval(): number {
+    return Math.max(100, 1000 - (this.level - 1) * 100);
   }
 
   update(time: number) {
@@ -42,7 +47,7 @@ export class Game {
     this.lastTime = time;
     this.dropCounter += deltaTime;
 
-    if (this.dropCounter > DROP_INTERVAL) {
+    if (this.dropCounter > this.dropInterval) {
       this.drop();
       this.dropCounter = 0;
     }
@@ -87,6 +92,7 @@ export class Game {
     this.ctx = ctx;
     this.stats = stats;
     this.registerEvents();
+    this.reset();
   }
 
   registerEvents() {
@@ -265,6 +271,12 @@ export class Game {
       this.stats.score += gained;
       this.stats.lines += lines;
       console.log(`Score: ${this.stats.score} (+${gained})`);
+      // レベルアップ（10ラインごと）
+      const newLevel = Math.floor(this.stats.lines / 10) + 1;
+      if (newLevel > this.level) {
+        this.level = newLevel;
+        console.log(`🎉 LEVEL UP! Now Level ${this.level}`);
+      }
     }
   }
 
